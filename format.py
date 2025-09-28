@@ -6,7 +6,7 @@
 import tkinter as tk
 import pandas as pd
 
-buildVersion = "0.2.0"
+buildVersion = "0.3.0"
 
 class LiveData:
     def __init__(self, rawTxt: str):
@@ -140,7 +140,8 @@ class LiveData:
         for line in self.data:
             output = output + line + "\n"
         output = output + "@PLAYLISTS" + "\n"
-        # Implement Playlist Saving Here
+        for pl in self.playlists:
+            output = output + pl + "\n"
         output = output + "@FINAL"
         return output
     
