@@ -5,7 +5,7 @@ import pyperclip
 import os, sys
 
 
-buildVersion = "0.3.0"
+buildVersion = "0.3.1"
 
 # Will Hostettler
 
@@ -24,6 +24,9 @@ root.title("SWAM")
 logo = tk.PhotoImage(file=resource_path("logo.png"))
 logoLabel = tk.Label(root, image=logo)
 logoLabel.pack()
+
+version = tk.Label(root, text=buildVersion)
+version.pack()
 
 instr = tk.Label(root, text="Load a TLS file to start.")
 instr.pack()
@@ -146,11 +149,43 @@ def startApp(ld: LiveData):
             dataLine = ld.getDataByID(itemID)
             pyperclip.copy(dataLine.split("^")[1])
 
+    def noLooseEnds(itemID: int):
+        # Deletes all references to this video
+        # Finds all playlists itemID is a part of
+        activeLists = []
+        indexes = []
+        track = 0
+        for pl in ld.playlists:
+            videos = pl.split("^")[1].split("+")
+            if itemID in videos:
+                activeLists.append(pl)
+                indexes.append(track)
+            track = track + 1
+
+        track = 0
+        for play in activeLists:
+            # Break down videos into a list then removes the ID
+            videos = play.split("^")[1].split("+")
+            videos = [i for i in videos if i != itemID]
+
+            rebuild = ""
+            for vid in videos:
+                if rebuild == "":
+                    rebuild = str(vid)
+                else:
+                    rebuild = rebuild + "+" + str(vid)
+
+            playlist = play.split("^")[0] + "^" + rebuild
+
+            ld.playlists[indexes[track]] = playlist
+            track = track + 1
+
     def delete():
         selected_indices = view.curselection()
         if selected_indices:
             selected_item = view.get(selected_indices[0])
             itemID = selected_item.split(":")[0]
+            noLooseEnds(itemID)
             dataIndex = ld.getIndexOfData(itemID)
             ld.deleteEntry(dataIndex)
             allEntries()
@@ -385,28 +420,34 @@ def startApp(ld: LiveData):
                 vids = 0
             else:
                 vids = len(pl.split("^")[1].split("+"))
-            print(pl.split("^")[1].split("+"))
+            #print(pl.split("^")[1].split("+"))
             item = pl.split("^")[0] + ". | " + str(vids) + " Items"
             view2.insert(tk.END, item)
 
         def selectClick():
+            #print("RUNNING CLICK CMD")
             selected_indices = view2.curselection()
-            if selected_indices and (vids > 0):
+            #print("SelIndices: " + str(selected_indices))
+            if selected_indices:
                 # The goal here is to take the edited data sent to the listbox, and reverse it back into a full playlist code
                 selected_item = view2.get(selected_indices[0])
-                name = selected_item.split(".")[0]
+                sliced = selected_item.split(" | ")[1]
+                diced = sliced.split(" ")[0]
+                videoCount = int(diced)
+                if videoCount > 0:
+                    name = selected_item.split(".")[0]
 
-                nameList = []
-                for pl in ld.playlists:
-                    nameList.append(pl.split("^")[0])
+                    nameList = []
+                    for pl in ld.playlists:
+                        nameList.append(pl.split("^")[0])
 
-                index = nameList.index(name)
-                playlist = ld.playlists[index]
+                    index = nameList.index(name)
+                    playlist = ld.playlists[index]
 
-                data = []
-                for id in playlist.split("^")[1].split("+"):
-                    data.append(ld.getDataByID(id))
-                ld.displayTo(data, view)
+                    data = []
+                    for id in playlist.split("^")[1].split("+"):
+                        data.append(ld.getDataByID(id))
+                    ld.displayTo(data, view)
                 find.destroy()
         
         select.config(command=selectClick)

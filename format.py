@@ -6,7 +6,7 @@
 import tkinter as tk
 import pandas as pd
 
-buildVersion = "0.3.0"
+buildVersion = "0.3.1"
 
 class LiveData:
     def __init__(self, rawTxt: str):
